@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Data Monitor & Scale Analyzer</title>
+    <!-- Google Fonts: Outfit for UI, JetBrains Mono for Code/Hex -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Vertical Sidebar -->
+        <aside class="app-sidebar">
+            <!-- Brand Logo Header -->
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h2>SERIAL DATA</h2>
+                    <span>MONITOR</span>
+                </div>
+            </div>
+
+            <!-- Sidebar Navigation Menu (Simplified as Requested) -->
+            <nav class="sidebar-nav">
+                <button class="side-nav-item active" id="sideNavLiveGraph" data-view="viewLiveGraph">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Live Graph</span>
+                </button>
+
+                <button class="side-nav-item" id="sideNavCommSettings" data-view="viewCommSettings">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Communication Settings</span>
+                </button>
+
+                <button class="side-nav-item" id="sideNavReports" data-view="viewReports">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Reports</span>
+                </button>
+            </nav>
+
+            <!-- Bottom Connection Status Card -->
+            <div class="sidebar-status-card">
+                <div class="sidebar-status-header">
+                    <span class="sidebar-dot disconnected" id="sidebarDot"></span>
+                    <span class="sidebar-status-text" id="sidebarStatusText">DISCONNECTED</span>
+                </div>
+                <div class="sidebar-port-desc" id="sidebarPortInfo">COM3 Serial Port</div>
+                <div class="sidebar-baud-desc" id="sidebarBaudInfo">9600 • 8N1</div>
+                <div class="sidebar-time-desc" id="sidebarTimeInfo">--:--:--</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main-content">
+            <!-- Top Header Bar -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="hamburger-btn" id="btnToggleSidebar" title="Toggle Sidebar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <h1 class="header-page-title" id="headerPageTitle">Live Graph</h1>
+                </div>
+
+                <div class="header-right-badges">
+                    <div class="header-pill receiving" id="streamStatusPill">
+                        <span class="p-dot"></span>
+                        <span id="streamStatusText">READY</span>
+                    </div>
+                    <div class="header-pill db-pill" id="dbStatusPill">
+                        <span id="dbStatusText">SQLite DB Loaded</span>
+                    </div>
+                    <div class="header-pill mode-pill" id="modePill">
+                        <span id="modeText">HARDWARE MODE</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Workspace Body Views -->
+            <div class="workspace-body">
+
+                <!-- ==========================================================================
+                     VIEW 1: LIVE GRAPH SCREEN (Default Active View)
+                     ========================================================================== -->
+                <div class="main-view active" id="viewLiveGraph">
+                    <!-- Live Weight Digital Readout Header Card -->
+                    <div class="live-readout-card">
+                        <div class="readout-header">
+                            <span class="readout-title">LIVE WEIGHT GRAPH</span>
+                        </div>
+
+                        <div class="readout-grid">
+                            <div class="readout-main-val">
+                                <span class="digital-num" id="digitalWeight">0.00</span>
+                                <span class="digital-unit">KG / VALUE</span>
+                            </div>
+
+                            <div class="readout-stat-group">
+                                <span class="r-label">RAW TEXT</span>
+                                <span class="r-val mono" id="rawTextStat">--</span>
+                            </div>
+
+                            <div class="readout-stat-group">
+                                <span class="r-label">TOTAL PACKETS</span>
+                                <span class="r-val" id="totalPacketsStat">0</span>
+                            </div>
+
+                            <div class="readout-stat-group">
+                                <span class="r-label">LAST UPDATE</span>
+                                <span class="r-val" id="lastUpdateStat">--:--:--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graph Container & Action Controls Bar -->
+                    <div class="graph-container-card">
+                        <div class="graph-toolbar-row">
+                            <div class="graph-toolbar-left">
+                                <button type="button" class="btn btn-graph-start" id="btnStartGraph">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    Start
+                                </button>
+                                <button type="button" class="btn btn-graph-stop" id="btnStopGraph" disabled>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <rect x="6" y="6" width="12" height="12"></rect>
+                                    </svg>
+                                    Stop
+                                </button>
+                                <button type="button" class="btn btn-toolbar-dark" id="btnResetZoom">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                    Reset Zoom
+                                </button>
+                            </div>
+
+                            <div class="graph-toolbar-right">
+                                <label class="auto-scroll-toggle">
+                                    <span>Auto-Scroll</span>
+                                    <input type="checkbox" id="chkAutoScroll" checked>
+                                    <span class="toggle-track"></span>
+                                </label>
+                                <button type="button" class="btn btn-toolbar-dark" id="btnClearLog">
+                                    Clear Log
+                                </button>
+                                <button type="button" class="btn btn-toolbar-dark" id="btnClearGraph">
+                                    Clear Graph
+                                </button>
+                                <button type="button" class="btn btn-toolbar-dark" id="btnExportLog">
+                                    Export JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Peak Detection Result Summary Callout (When Stop Clicked) -->
+                        <div class="peak-summary-card" id="peakSummaryCard" style="display: none;">
+                            <div class="peak-card-header">
+                                <div class="peak-title-group">
+                                    <span class="peak-badge-icon">⚡</span>
+                                    <span class="peak-card-title">PEAK ANALYSIS RESULT</span>
+                                    <span class="report-saved-badge" id="reportSavedBadge">💾 Report Saved to DB</span>
+                                </div>
+                                <span class="peak-timestamp-tag" id="peakTimestampTag">Detected at --:--:--</span>
+                            </div>
+                            <div class="peak-metrics-grid">
+                                <div class="peak-metric-item highlight-peak">
+                                    <span class="p-label">MAXIMUM PEAK WEIGHT</span>
+                                    <span class="p-val" id="peakValueVal">0.00</span>
+                                    <span class="p-sub">Highest level recorded</span>
+                                </div>
+                                <div class="peak-metric-item">
+                                    <span class="p-label">TIME TAKEN (DURATION)</span>
+                                    <span class="p-val cyan-txt" id="peakDurationVal">0.0s</span>
+                                    <span class="p-sub" id="peakStartEndSub">Start --:--:-- to --:--:--</span>
+                                </div>
+                                <div class="peak-metric-item">
+                                    <span class="p-label">SESSION AVERAGE</span>
+                                    <span class="p-val" id="peakAvgVal">0.00</span>
+                                    <span class="p-sub">Mean weight value</span>
+                                </div>
+                                <div class="peak-metric-item">
+                                    <span class="p-label">SAMPLES RECORDED</span>
+                                    <span class="p-val" id="peakSampleCount">0</span>
+                                    <span class="p-sub">Data points captured</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Canvas Wrapper -->
+                        <div class="canvas-wrapper">
+                            <canvas id="liveGraphCanvas" width="1100" height="340"></canvas>
+                            <div class="canvas-overlay-hint" id="canvasOverlayHint">
+                                Click <b>Start</b> to begin live weight curve monitoring...
+                            </div>
+                        </div>
+
+                        <!-- Bottom Summary Metrics Bar (MIN / MAX / AVERAGE / SAMPLES) -->
+                        <div class="graph-summary-bar">
+                            <div class="summary-stat-box">
+                                <span class="s-label">MIN</span>
+                                <span class="s-val cyan" id="statMinVal">0.00</span>
+                            </div>
+                            <div class="summary-stat-box">
+                                <span class="s-label">MAX</span>
+                                <span class="s-val green" id="statMaxVal">0.00</span>
+                            </div>
+                            <div class="summary-stat-box">
+                                <span class="s-label">AVERAGE</span>
+                                <span class="s-val amber" id="statAvgVal">0.00</span>
+                            </div>
+                            <div class="summary-stat-box">
+                                <span class="s-label">SAMPLES</span>
+                                <span class="s-val purple" id="statSamplesCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Raw Data Viewers Panel -->
+                    <div class="card viewer-card">
+                        <div class="viewer-header">
+                            <div class="tab-group">
+                                <button class="tab-btn active" data-tab="tabTerminal">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="4 17 10 11 4 5"></polyline>
+                                        <line x1="12" y1="19" x2="20" y2="19"></line>
+                                    </svg>
+                                    Terminal Log
+                                </button>
+                                <button class="tab-btn" data-tab="tabTable">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                                    </svg>
+                                    Packets Table
+                                </button>
+                                <button class="tab-btn" data-tab="tabHexInspector">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                    Hex Matrix Inspector
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="viewer-body">
+                            <!-- Tab 1: Terminal Log -->
+                            <div class="tab-content active" id="tabTerminal">
+                                <div class="terminal-window" id="terminalConsole">
+                                    <div class="terminal-line system-line">
+                                        <span class="t-time">[00:00:00]</span>
+                                        <span class="t-msg">System initialized. Configure communication settings or click Start to record frames.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 2: Packet Table -->
+                            <div class="tab-content" id="tabTable">
+                                <div class="table-wrapper">
+                                    <table class="packet-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>TIME</th>
+                                                <th>RAW BYTES</th>
+                                                <th>HEX REPRESENTATION</th>
+                                                <th>ASCII TEXT</th>
+                                                <th>NORMALIZED</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="packetTableBody">
+                                            <tr class="empty-row">
+                                                <td colspan="6">No serial frames captured yet.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Tab 3: Hex Matrix Inspector -->
+                            <div class="tab-content" id="tabHexInspector">
+                                <div class="hex-inspector-container">
+                                    <div class="hex-inspector-header">
+                                        <span>LATEST FRAME BYTE-BY-BYTE INSPECTOR</span>
+                                        <span class="byte-count-tag" id="inspectorByteCount">0 bytes</span>
+                                    </div>
+                                    <div class="hex-grid" id="hexGridContainer">
+                                        <div class="empty-inspector">Waiting for incoming frame to inspect...</div>
+                                    </div>
+                                    <div class="hex-legend">
+                                        <span class="legend-item"><span class="color-box control"></span> Control Char (0x00-0x1F)</span>
+                                        <span class="legend-item"><span class="color-box ascii"></span> Printable ASCII (0x20-0x7E)</span>
+                                        <span class="legend-item"><span class="color-box delimiter"></span> CR / LF (0x0D / 0x0A)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================================
+                     VIEW 2: DEDICATED COMMUNICATION & ADMIN SETTINGS SCREEN
+                     ========================================================================== -->
+                <div class="main-view" id="viewCommSettings">
+                    <div class="comm-settings-grid">
+                        <div class="comm-left-col">
+                            <!-- Card 1: Serial Port Setup -->
+                            <div class="card config-card">
+                                <div class="card-header">
+                                    <h2>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                        </svg>
+                                        Serial Communication Setup
+                                    </h2>
+                                    <button class="btn-icon" id="btnRefreshPorts" title="Refresh COM Ports">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Simulator Toggle Switch -->
+                                <div class="sim-toggle-row">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="simModeCheckbox">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <div class="toggle-label">
+                                        <span class="toggle-title">Virtual Scale Simulator</span>
+                                        <span class="toggle-desc">Generate synthetic raw scale data offline</span>
+                                    </div>
+                                </div>
+
+                                <!-- Error Alert Box -->
+                                <div class="error-alert-box" id="errorAlertBox" style="display: none;">
+                                    <span style="font-size: 1rem;">⚠️</span>
+                                    <div id="errorAlertText">Serial Port Error</div>
+                                </div>
+
+                                <div class="info-tip-box" id="infoTipBox">
+                                    <span style="color: var(--accent-cyan); font-weight: bold;">💡 TIP:</span> Select a COM port or turn <b>Virtual Scale Simulator</b> ON for offline testing!
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label for="portSelect">SERIAL PORT</label>
+                                        <div class="select-wrapper">
+                                            <select id="portSelect">
+                                                <option value="com3" selected>COM3 - Standard Serial</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="baudRate">BAUD RATE</label>
+                                        <select id="baudRate">
+                                            <option value="1200">1200</option>
+                                            <option value="2400">2400</option>
+                                            <option value="4800">4800</option>
+                                            <option value="9600" selected>9600</option>
+                                            <option value="19200">19200</option>
+                                            <option value="38400">38400</option>
+                                            <option value="57600">57600</option>
+                                            <option value="115200">115200</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="dataBits">DATA BITS</label>
+                                        <select id="dataBits">
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8" selected>8</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="parity">PARITY</label>
+                                        <select id="parity">
+                                            <option value="None" selected>None</option>
+                                            <option value="Even">Even</option>
+                                            <option value="Odd">Odd</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="stopBits">STOP BITS</label>
+                                        <select id="stopBits">
+                                            <option value="1" selected>1</option>
+                                            <option value="1.5">1.5</option>
+                                            <option value="2">2</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="readTimeout">TIMEOUT (s)</label>
+                                        <input type="number" id="readTimeout" value="1.0" step="0.1" min="0.1">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="interGap">INTER-GAP (s)</label>
+                                        <input type="number" id="interGap" value="2.0" step="0.5" min="0.1">
+                                    </div>
+                                </div>
+
+                                <div class="btn-group">
+                                    <button class="btn btn-primary" id="btnConnect">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                        </svg>
+                                        Connect & Stream
+                                    </button>
+                                    <button class="btn btn-danger" id="btnDisconnect" disabled>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="6" y="6" width="12" height="12"></rect>
+                                        </svg>
+                                        Disconnect
+                                    </button>
+                                    <button class="btn btn-secondary" id="btnTest">
+                                        Test Frame
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Frame Parsing & Weight Rules -->
+                            <div class="card parse-card">
+                                <div class="card-header">
+                                    <h2>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                            <line x1="9" y1="20" x2="15" y2="20"></line>
+                                            <line x1="12" y1="4" x2="12" y2="20"></line>
+                                        </svg>
+                                        Frame Parsing & Weight Rules
+                                    </h2>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="startChar">START CHAR / STX</label>
+                                        <input type="text" id="startChar" placeholder="e.g. \x02 or STX">
+                                        <div class="quick-inserts">
+                                            <button type="button" class="tag-btn" data-insert="\x02">STX (\x02)</button>
+                                            <button type="button" class="tag-btn" data-insert="=">=</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="endChar">END CHAR / ETX</label>
+                                        <input type="text" id="endChar" placeholder="e.g. \x03 or ETX">
+                                        <div class="quick-inserts">
+                                            <button type="button" class="tag-btn" data-insert="\x03">ETX (\x03)</button>
+                                            <button type="button" class="tag-btn" data-insert="\r">\r</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="startAddr">START ADDR</label>
+                                        <input type="number" id="startAddr" value="0" min="0" placeholder="0 = Auto">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="endAddr">END ADDR</label>
+                                        <input type="number" id="endAddr" value="0" min="0" placeholder="0 = Auto">
+                                    </div>
+
+                                    <div class="form-group full-width checkbox-group">
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" id="reverseWeight">
+                                            <span class="checkmark"></span>
+                                            <span class="checkbox-text">Reverse Weight String (Right-to-Left)</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="btn-group" style="margin-top: 14px; display: flex; gap: 8px;">
+                                    <button class="btn btn-outline" id="btnApplyRules" style="flex: 1;">
+                                        Apply Rules
+                                    </button>
+                                    <button class="btn btn-secondary" id="btnSaveDb" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;" title="Save all settings to SQLite Database">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                            <polyline points="7 3 7 8 15 8"></polyline>
+                                        </svg>
+                                        Save DB Config
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="comm-right-col">
+                            <!-- SQLite Database Persistence Summary Card -->
+                            <div class="card db-card">
+                                <div class="db-card-header">
+                                    <div class="db-header-left">
+                                        <div class="db-icon-box">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3>SQLite Database Storage</h3>
+                                            <p>Database File: <code>config.db</code></p>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary" id="btnReloadDb">
+                                        Reload from DB
+                                    </button>
+                                </div>
+
+                                <div class="db-metrics-grid">
+                                    <div>
+                                        <span class="db-metric-label">SAVED PORT</span>
+                                        <span class="db-metric-val cyan" id="dbInfoPort">com3</span>
+                                    </div>
+                                    <div>
+                                        <span class="db-metric-label">SAVED BAUD</span>
+                                        <span class="db-metric-val white" id="dbInfoBaud">9600</span>
+                                    </div>
+                                    <div>
+                                        <span class="db-metric-label">PARSING MARKERS</span>
+                                        <span class="db-metric-val green" id="dbInfoMarkers">None</span>
+                                    </div>
+                                    <div>
+                                        <span class="db-metric-label">LAST UPDATED</span>
+                                        <span class="db-metric-val muted" id="dbInfoUpdated">Just now</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Rule Tester Card -->
+                            <div class="card tester-card">
+                                <div class="tester-container">
+                                    <div class="tester-header-row">
+                                        <div>
+                                            <h3>Character Position Inspector & Rule Tester</h3>
+                                            <p class="tester-desc">Paste raw text or click sample presets to visually slice start/end bounds.</p>
+                                        </div>
+                                        <div class="sample-presets">
+                                            <span class="preset-label">SAMPLES:</span>
+                                            <button type="button" class="preset-btn" id="presetUserSample">05[0 00000]$%</button>
+                                            <button type="button" class="preset-btn" id="presetStxSample">\x02 0012.45 kg\r\n</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group full-width">
+                                        <label>TEST RAW SERIAL INPUT</label>
+                                        <textarea id="testerInput" rows="2" placeholder="Paste raw text e.g. 05[0 00000]$% or \x02 0012.45 kg\r\n">05[0 00000]$%05[0 00000]$%</textarea>
+                                    </div>
+
+                                    <div class="visual-strip-section">
+                                        <div class="strip-header">
+                                            <span class="strip-title">1-BASED CHARACTER INDEX POSITION MAP</span>
+                                        </div>
+                                        <div class="char-strip-scroll" id="testerCharStrip">
+                                            <!-- Dynamic tiles -->
+                                        </div>
+                                        <div class="strip-legend">
+                                            <span class="s-item start-m"><span class="s-dot cyan"></span> Start Marker</span>
+                                            <span class="s-item end-m"><span class="s-dot amber"></span> End Marker</span>
+                                            <span class="s-item frame-c"><span class="s-dot purple"></span> Captured Frame</span>
+                                            <span class="s-item slice-a"><span class="s-dot green"></span> Address Sliced Range</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="tester-breakdown-grid">
+                                        <div class="breakdown-box">
+                                            <span class="b-label">CAPTURED FRAME TEXT:</span>
+                                            <span class="b-val mono" id="testerFrameText">--</span>
+                                        </div>
+                                        <div class="breakdown-box">
+                                            <span class="b-label">ADDRESS SLICED SUBSTRING:</span>
+                                            <span class="b-val mono" id="testerSlicedText">--</span>
+                                        </div>
+                                        <div class="breakdown-box result-box">
+                                            <span class="b-label">FINAL NORMALIZED VALUE:</span>
+                                            <span class="b-val main-res" id="testerResult">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==========================================================================
+                     VIEW 3: REPORTS SCREEN (SQLite Graph Session History)
+                     ========================================================================== -->
+                <div class="main-view" id="viewReports">
+                    <div class="reports-header-card">
+                        <div class="reports-header-left">
+                            <div class="reports-icon-box">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2>Graph Session Saved Reports</h2>
+                                <p>Persisted SQLite database record history for every Start/Stop live graph session.</p>
+                            </div>
+                        </div>
+
+                        <div class="reports-actions">
+                            <button class="btn btn-secondary" id="btnRefreshReports">
+                                ↻ Refresh Reports
+                            </button>
+                            <button class="btn btn-danger" id="btnClearAllReports">
+                                🗑️ Clear All History
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reports Overview Stats Grid -->
+                    <div class="reports-stats-grid">
+                        <div class="report-stat-box">
+                            <span class="rs-label">TOTAL SAVED REPORTS</span>
+                            <span class="rs-val cyan" id="reportsCountVal">0</span>
+                        </div>
+                        <div class="report-stat-box">
+                            <span class="rs-label">MAXIMUM PEAK EVER</span>
+                            <span class="rs-val green" id="reportsMaxPeakVal">0.00 KG</span>
+                        </div>
+                        <div class="report-stat-box">
+                            <span class="rs-label">LAST RECORDED REPORT</span>
+                            <span class="rs-val amber" id="reportsLastTimeVal">None</span>
+                        </div>
+                    </div>
+
+                    <!-- Reports Data Table Card -->
+                    <div class="card reports-table-card">
+                        <div class="table-wrapper">
+                            <table class="packet-table reports-table">
+                                <thead>
+                                    <tr>
+                                        <th>REPORT ID</th>
+                                        <th>MAXIMUM PEAK</th>
+                                        <th>START TIME</th>
+                                        <th>END TIME</th>
+                                        <th>TIME TAKEN</th>
+                                        <th>SAMPLES</th>
+                                        <th>RECORDED AT</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsTableBody">
+                                    <tr class="empty-row">
+                                        <td colspan="8">No graph session reports recorded in SQLite DB yet. Click <b>Start</b> and <b>Stop</b> on Live Graph to create reports!</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
